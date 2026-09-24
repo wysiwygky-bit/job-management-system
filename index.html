@@ -1,0 +1,1360 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Job Management System</title>
+
+    <!-- Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: Arial, Helvetica, sans-serif;
+        }
+
+        body {
+            background: #f4f6f8;
+            color: #222;
+        }
+
+        /* HEADER */
+
+        .header {
+            background: #1f2937;
+            color: white;
+            padding: 20px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            font-size: 24px;
+        }
+
+        .header p {
+            color: #cbd5e1;
+            font-size: 14px;
+            margin-top: 4px;
+        }
+
+        /* MAIN */
+
+        .container {
+            max-width: 1400px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+
+        /* DASHBOARD */
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+
+        .card-title {
+            font-size: 14px;
+            color: #6b7280;
+        }
+
+        .card-number {
+            font-size: 28px;
+            font-weight: bold;
+            margin-top: 8px;
+        }
+
+        /* CONTROLS */
+
+        .controls {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+
+        .controls-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .filters {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        select,
+        input,
+        textarea {
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            padding: 10px;
+            font-size: 14px;
+            background: white;
+        }
+
+        select:focus,
+        input:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #2563eb;
+        }
+
+        button {
+            border: none;
+            border-radius: 6px;
+            padding: 10px 16px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .btn-primary {
+            background: #2563eb;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #1d4ed8;
+        }
+
+        .btn-secondary {
+            background: #e5e7eb;
+            color: #111827;
+        }
+
+        .btn-edit {
+            background: #f3f4f6;
+            color: #2563eb;
+        }
+
+        .btn-delete {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+
+        /* TABLE */
+
+        .table-container {
+            background: white;
+            border-radius: 10px;
+            overflow-x: auto;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 900px;
+        }
+
+        th {
+            background: #f9fafb;
+            text-align: left;
+            padding: 15px;
+            font-size: 13px;
+            color: #6b7280;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        td {
+            padding: 15px;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 14px;
+        }
+
+        tr:hover {
+            background: #fafafa;
+        }
+
+        .job-title {
+            font-weight: bold;
+            color: #111827;
+        }
+
+        .description {
+            color: #6b7280;
+            margin-top: 4px;
+            font-size: 12px;
+        }
+
+        /* BADGES */
+
+        .badge {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .status-todo {
+            background: #e5e7eb;
+            color: #374151;
+        }
+
+        .status-progress {
+            background: #dbeafe;
+            color: #1d4ed8;
+        }
+
+        .status-complete {
+            background: #dcfce7;
+            color: #15803d;
+        }
+
+        .priority-low {
+            background: #dcfce7;
+            color: #15803d;
+        }
+
+        .priority-medium {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .priority-high {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+
+        .actions {
+            display: flex;
+            gap: 6px;
+        }
+
+        /* MODAL */
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.45);
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal-content {
+            background: white;
+            width: 100%;
+            max-width: 650px;
+            max-height: 90vh;
+            overflow-y: auto;
+            border-radius: 12px;
+            padding: 25px;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-header h2 {
+            font-size: 21px;
+        }
+
+        .close {
+            font-size: 25px;
+            cursor: pointer;
+            color: #6b7280;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .form-group.full {
+            grid-column: span 2;
+        }
+
+        label {
+            font-size: 13px;
+            font-weight: bold;
+            color: #374151;
+        }
+
+        textarea {
+            min-height: 90px;
+            resize: vertical;
+        }
+
+        .modal-buttons {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        /* EMPTY */
+
+        .empty {
+            text-align: center;
+            padding: 50px;
+            color: #6b7280;
+        }
+
+        /* LOADING */
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #6b7280;
+        }
+
+        /* MOBILE */
+
+        @media (max-width: 800px) {
+
+            .dashboard {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .controls-top {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .filters {
+                width: 100%;
+            }
+
+            .filters select {
+                flex: 1;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .form-group.full {
+                grid-column: span 1;
+            }
+
+        }
+
+    </style>
+</head>
+
+<body>
+
+    <!-- HEADER -->
+
+    <div class="header">
+
+        <div>
+            <h1>Job Management System</h1>
+            <p>Manage jobs, employees, priorities and deadlines</p>
+        </div>
+
+        <button class="btn-primary" onclick="openAddModal()">
+            + Add Job
+        </button>
+
+    </div>
+
+
+    <div class="container">
+
+        <!-- DASHBOARD -->
+
+        <div class="dashboard">
+
+            <div class="card">
+                <div class="card-title">
+                    Total Jobs
+                </div>
+
+                <div class="card-number" id="totalJobs">
+                    0
+                </div>
+            </div>
+
+
+            <div class="card">
+                <div class="card-title">
+                    To Do
+                </div>
+
+                <div class="card-number" id="todoJobs">
+                    0
+                </div>
+            </div>
+
+
+            <div class="card">
+                <div class="card-title">
+                    In Progress
+                </div>
+
+                <div class="card-number" id="progressJobs">
+                    0
+                </div>
+            </div>
+
+
+            <div class="card">
+                <div class="card-title">
+                    Complete
+                </div>
+
+                <div class="card-number" id="completeJobs">
+                    0
+                </div>
+            </div>
+
+        </div>
+
+
+        <!-- FILTERS -->
+
+        <div class="controls">
+
+            <div class="controls-top">
+
+                <div class="filters">
+
+                    <select id="statusFilter" onchange="loadJobs()">
+
+                        <option value="">
+                            All Status
+                        </option>
+
+                        <option value="To Do">
+                            To Do
+                        </option>
+
+                        <option value="In Progress">
+                            In Progress
+                        </option>
+
+                        <option value="Complete">
+                            Complete
+                        </option>
+
+                    </select>
+
+
+                    <select id="employeeFilter" onchange="loadJobs()">
+
+                        <option value="">
+                            All Employees
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+                <button class="btn-secondary" onclick="clearFilters()">
+                    Clear Filters
+                </button>
+
+            </div>
+
+        </div>
+
+
+        <!-- JOB TABLE -->
+
+        <div class="table-container">
+
+            <table>
+
+                <thead>
+
+                    <tr>
+
+                        <th>
+                            Job
+                        </th>
+
+                        <th>
+                            Employee
+                        </th>
+
+                        <th>
+                            Due Date
+                        </th>
+
+                        <th>
+                            Priority
+                        </th>
+
+                        <th>
+                            Status
+                        </th>
+
+                        <th>
+                            Notes
+                        </th>
+
+                        <th>
+                            Actions
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+                <tbody id="jobTable">
+
+                    <tr>
+                        <td colspan="7" class="loading">
+                            Loading jobs...
+                        </td>
+                    </tr>
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+
+    <!-- ADD / EDIT MODAL -->
+
+    <div class="modal" id="jobModal">
+
+        <div class="modal-content">
+
+            <div class="modal-header">
+
+                <h2 id="modalTitle">
+                    Add New Job
+                </h2>
+
+                <span class="close" onclick="closeModal()">
+                    &times;
+                </span>
+
+            </div>
+
+
+            <form id="jobForm">
+
+                <input type="hidden" id="jobId">
+
+
+                <div class="form-grid">
+
+
+                    <div class="form-group full">
+
+                        <label>
+                            Job Title *
+                        </label>
+
+                        <input
+                            type="text"
+                            id="title"
+                            placeholder="Example: Install network equipment"
+                            required
+                        >
+
+                    </div>
+
+
+                    <div class="form-group full">
+
+                        <label>
+                            Description
+                        </label>
+
+                        <textarea
+                            id="description"
+                            placeholder="Enter job description..."
+                        ></textarea>
+
+                    </div>
+
+
+                    <div class="form-group">
+
+                        <label>
+                            Assigned Employee
+                        </label>
+
+                        <input
+                            type="text"
+                            id="employee"
+                            placeholder="Example: John"
+                        >
+
+                    </div>
+
+
+                    <div class="form-group">
+
+                        <label>
+                            Due Date
+                        </label>
+
+                        <input
+                            type="date"
+                            id="dueDate"
+                        >
+
+                    </div>
+
+
+                    <div class="form-group">
+
+                        <label>
+                            Priority
+                        </label>
+
+                        <select id="priority">
+
+                            <option value="Low">
+                                Low
+                            </option>
+
+                            <option value="Medium" selected>
+                                Medium
+                            </option>
+
+                            <option value="High">
+                                High
+                            </option>
+
+                        </select>
+
+                    </div>
+
+
+                    <div class="form-group">
+
+                        <label>
+                            Status
+                        </label>
+
+                        <select id="status">
+
+                            <option value="To Do">
+                                To Do
+                            </option>
+
+                            <option value="In Progress">
+                                In Progress
+                            </option>
+
+                            <option value="Complete">
+                                Complete
+                            </option>
+
+                        </select>
+
+                    </div>
+
+
+                    <div class="form-group full">
+
+                        <label>
+                            Notes
+                        </label>
+
+                        <textarea
+                            id="notes"
+                            placeholder="Additional notes..."
+                        ></textarea>
+
+                    </div>
+
+
+                </div>
+
+
+                <div class="modal-buttons">
+
+                    <button
+                        type="button"
+                        class="btn-secondary"
+                        onclick="closeModal()"
+                    >
+                        Cancel
+                    </button>
+
+                    <button
+                        type="submit"
+                        class="btn-primary"
+                    >
+                        Save Job
+                    </button>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+
+<script>
+
+    // ============================================================
+    // SUPABASE CONFIGURATION
+    // ============================================================
+
+    const SUPABASE_URL = "https://mjsmganmhanmhwvidthf.supabase.co";
+
+    const SUPABASE_KEY = "sb_publishable_U-WT3m5DB4QlRLb1B97YxQ__EhtGbFp";
+
+
+    const { createClient } = supabase;
+
+    const db = createClient(
+        SUPABASE_URL,
+        SUPABASE_KEY
+    );
+
+
+    // ============================================================
+    // LOAD JOBS
+    // ============================================================
+
+    async function loadJobs() {
+
+        const statusFilter =
+            document.getElementById("statusFilter").value;
+
+        const employeeFilter =
+            document.getElementById("employeeFilter").value;
+
+
+        let query = db
+            .from("jobs")
+            .select("*")
+            .order("created_at", {
+                ascending: false
+            });
+
+
+        if (statusFilter) {
+
+            query = query.eq(
+                "status",
+                statusFilter
+            );
+
+        }
+
+
+        if (employeeFilter) {
+
+            query = query.eq(
+                "assigned_employee",
+                employeeFilter
+            );
+
+        }
+
+
+        const { data, error } = await query;
+
+
+        if (error) {
+
+            console.error(error);
+
+            document.getElementById("jobTable").innerHTML = `
+                <tr>
+                    <td colspan="7" class="empty">
+                        Error loading jobs.
+                    </td>
+                </tr>
+            `;
+
+            return;
+        }
+
+
+        displayJobs(data);
+
+        updateDashboard(data);
+
+        loadEmployees();
+
+    }
+
+
+    // ============================================================
+    // DISPLAY JOBS
+    // ============================================================
+
+    function displayJobs(jobs) {
+
+        const table =
+            document.getElementById("jobTable");
+
+
+        if (!jobs || jobs.length === 0) {
+
+            table.innerHTML = `
+                <tr>
+                    <td colspan="7" class="empty">
+                        No jobs found.
+                    </td>
+                </tr>
+            `;
+
+            return;
+
+        }
+
+
+        table.innerHTML = jobs.map(job => {
+
+            let statusClass = "status-todo";
+
+
+            if (job.status === "In Progress") {
+
+                statusClass = "status-progress";
+
+            }
+
+
+            if (job.status === "Complete") {
+
+                statusClass = "status-complete";
+
+            }
+
+
+            let priorityClass =
+                "priority-medium";
+
+
+            if (job.priority === "Low") {
+
+                priorityClass =
+                    "priority-low";
+
+            }
+
+
+            if (job.priority === "High") {
+
+                priorityClass =
+                    "priority-high";
+
+            }
+
+
+            return `
+
+                <tr>
+
+                    <td>
+
+                        <div class="job-title">
+                            ${escapeHTML(job.title)}
+                        </div>
+
+                        <div class="description">
+                            ${escapeHTML(job.description || "")}
+                        </div>
+
+                    </td>
+
+
+                    <td>
+                        ${escapeHTML(
+                            job.assigned_employee || "Unassigned"
+                        )}
+                    </td>
+
+
+                    <td>
+                        ${job.due_date || "-"}
+                    </td>
+
+
+                    <td>
+
+                        <span class="badge ${priorityClass}">
+                            ${job.priority}
+                        </span>
+
+                    </td>
+
+
+                    <td>
+
+                        <span class="badge ${statusClass}">
+                            ${job.status}
+                        </span>
+
+                    </td>
+
+
+                    <td>
+                        ${escapeHTML(job.notes || "-")}
+                    </td>
+
+
+                    <td>
+
+                        <div class="actions">
+
+                            <button
+                                class="btn-edit"
+                                onclick="editJob(${job.id})"
+                            >
+                                Edit
+                            </button>
+
+                            <button
+                                class="btn-delete"
+                                onclick="deleteJob(${job.id})"
+                            >
+                                Delete
+                            </button>
+
+                        </div>
+
+                    </td>
+
+                </tr>
+
+            `;
+
+        }).join("");
+
+    }
+
+
+    // ============================================================
+    // DASHBOARD
+    // ============================================================
+
+    async function updateDashboard() {
+
+        const { data, error } = await db
+            .from("jobs")
+            .select("status");
+
+
+        if (error) {
+
+            console.error(error);
+
+            return;
+
+        }
+
+
+        document.getElementById("totalJobs").textContent =
+            data.length;
+
+
+        document.getElementById("todoJobs").textContent =
+            data.filter(
+                job => job.status === "To Do"
+            ).length;
+
+
+        document.getElementById("progressJobs").textContent =
+            data.filter(
+                job => job.status === "In Progress"
+            ).length;
+
+
+        document.getElementById("completeJobs").textContent =
+            data.filter(
+                job => job.status === "Complete"
+            ).length;
+
+    }
+
+
+    // ============================================================
+    // LOAD EMPLOYEES
+    // ============================================================
+
+    async function loadEmployees() {
+
+        const { data, error } = await db
+            .from("jobs")
+            .select("assigned_employee");
+
+
+        if (error) {
+
+            console.error(error);
+
+            return;
+
+        }
+
+
+        const employees = [
+            ...new Set(
+                data
+                    .map(job => job.assigned_employee)
+                    .filter(employee => employee)
+            )
+        ];
+
+
+        const select =
+            document.getElementById("employeeFilter");
+
+
+        const currentValue =
+            select.value;
+
+
+        select.innerHTML = `
+            <option value="">
+                All Employees
+            </option>
+        `;
+
+
+        employees.forEach(employee => {
+
+            const option =
+                document.createElement("option");
+
+            option.value = employee;
+
+            option.textContent = employee;
+
+            select.appendChild(option);
+
+        });
+
+
+        select.value = currentValue;
+
+    }
+
+
+    // ============================================================
+    // OPEN ADD MODAL
+    // ============================================================
+
+    function openAddModal() {
+
+        document.getElementById("jobForm").reset();
+
+        document.getElementById("jobId").value = "";
+
+        document.getElementById("modalTitle").textContent =
+            "Add New Job";
+
+        document.getElementById("jobModal").style.display =
+            "flex";
+
+    }
+
+
+    // ============================================================
+    // CLOSE MODAL
+    // ============================================================
+
+    function closeModal() {
+
+        document.getElementById("jobModal").style.display =
+            "none";
+
+    }
+
+
+    // ============================================================
+    // ADD / UPDATE JOB
+    // ============================================================
+
+    document
+        .getElementById("jobForm")
+        .addEventListener("submit", async function(event) {
+
+            event.preventDefault();
+
+
+            const id =
+                document.getElementById("jobId").value;
+
+
+            const jobData = {
+
+                title:
+                    document.getElementById("title").value,
+
+                description:
+                    document.getElementById("description").value,
+
+                assigned_employee:
+                    document.getElementById("employee").value,
+
+                due_date:
+                    document.getElementById("dueDate").value || null,
+
+                priority:
+                    document.getElementById("priority").value,
+
+                status:
+                    document.getElementById("status").value,
+
+                notes:
+                    document.getElementById("notes").value
+
+            };
+
+
+            let result;
+
+
+            if (id) {
+
+                result = await db
+                    .from("jobs")
+                    .update(jobData)
+                    .eq("id", id);
+
+            } else {
+
+                result = await db
+                    .from("jobs")
+                    .insert([jobData]);
+
+            }
+
+
+            if (result.error) {
+
+                alert(
+                    "Error saving job: " +
+                    result.error.message
+                );
+
+                console.error(result.error);
+
+                return;
+
+            }
+
+
+            closeModal();
+
+            loadJobs();
+
+        });
+
+
+    // ============================================================
+    // EDIT JOB
+    // ============================================================
+
+    async function editJob(id) {
+
+        const { data, error } = await db
+            .from("jobs")
+            .select("*")
+            .eq("id", id)
+            .single();
+
+
+        if (error) {
+
+            alert(
+                "Error loading job: " +
+                error.message
+            );
+
+            return;
+
+        }
+
+
+        document.getElementById("jobId").value =
+            data.id;
+
+
+        document.getElementById("title").value =
+            data.title || "";
+
+
+        document.getElementById("description").value =
+            data.description || "";
+
+
+        document.getElementById("employee").value =
+            data.assigned_employee || "";
+
+
+        document.getElementById("dueDate").value =
+            data.due_date || "";
+
+
+        document.getElementById("priority").value =
+            data.priority || "Medium";
+
+
+        document.getElementById("status").value =
+            data.status || "To Do";
+
+
+        document.getElementById("notes").value =
+            data.notes || "";
+
+
+        document.getElementById("modalTitle").textContent =
+            "Edit Job";
+
+
+        document.getElementById("jobModal").style.display =
+            "flex";
+
+    }
+
+
+    // ============================================================
+    // DELETE JOB
+    // ============================================================
+
+    async function deleteJob(id) {
+
+        const confirmed =
+            confirm(
+                "Are you sure you want to delete this job?"
+            );
+
+
+        if (!confirmed) {
+
+            return;
+
+        }
+
+
+        const { error } = await db
+            .from("jobs")
+            .delete()
+            .eq("id", id);
+
+
+        if (error) {
+
+            alert(
+                "Error deleting job: " +
+                error.message
+            );
+
+            return;
+
+        }
+
+
+        loadJobs();
+
+    }
+
+
+    // ============================================================
+    // FILTER
+    // ============================================================
+
+    function clearFilters() {
+
+        document.getElementById("statusFilter").value = "";
+
+        document.getElementById("employeeFilter").value = "";
+
+        loadJobs();
+
+    }
+
+
+    // ============================================================
+    // HTML SECURITY
+    // ============================================================
+
+    function escapeHTML(value) {
+
+        if (!value) {
+
+            return "";
+
+        }
+
+
+        return String(value)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+
+    }
+
+
+    // ============================================================
+    // CLOSE MODAL WHEN CLICKING OUTSIDE
+    // ============================================================
+
+    window.onclick = function(event) {
+
+        const modal =
+            document.getElementById("jobModal");
+
+
+        if (event.target === modal) {
+
+            closeModal();
+
+        }
+
+    };
+
+
+    // ============================================================
+    // START APPLICATION
+    // ============================================================
+
+    loadJobs();
+
+</script>
+
+</body>
+
+</html>
